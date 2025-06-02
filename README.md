@@ -55,9 +55,10 @@ tamamen tarayıcı tabanlı olarak geliştirilmiştir.
 
 ##  Proje Dosya Yapısı
  tugba-hamming-simulator/
-├── tugba_hamming.html # Tüm kod burada
-├── README.md # Bu döküman
-└── screenshot.png # Ekran görüntüsü 
+ 
+ tugba_hamming.html # Tüm kod burada
+ README.md # Bu döküman
+screenshot.png # Ekran görüntüsü 
 ## Ekran kaydı 
 
 Projenin çalışma sürecini adım adım gösteren ekran kaydına aşağıdaki bağlantıdan ulaşabilirsiniz:
