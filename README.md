@@ -63,4 +63,6 @@ screenshot.png # Ekran görüntüsü
 
 Projenin çalışma sürecini adım adım gösteren ekran kaydına aşağıdaki bağlantıdan ulaşabilirsiniz:
 https://www.youtube.com/watch?v=5cZ1VFWCLE4
+## projenin detaylı raporu 
+
 
