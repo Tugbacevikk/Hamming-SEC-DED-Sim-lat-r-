@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tuğba'nın Hamming SEC-DED Simülatörü</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #fff6f6;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .kapsayici {
+      background-color: #ffffff;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 800px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #b71c1c;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #444;
+    }
+
+    input, button {
+      padding: 8px 15px;
+      margin: 6px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    input {
+      width: 60%;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #c62828;
+      color: white;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #8e0000;
+    }
+
+    .bit-kutusu {
+      margin-top: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .bit {
+      width: 35px;
+      height: 35px;
+      border: 1px solid #333;
+      border-radius: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .parite {
+      background-color: #ffcdd2;
+    }
+
+    table {
+      margin-top: 10px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ffebee;
+    }
+
+    .sonuc-alani {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="kapsayici">
+    <h1>Tuğba'nın Hamming SEC-DED Simülatörü</h1>
+    <p>Bu araç, 4, 8 veya 16 bitlik veriler için Hamming kodlamasını hesaplar, hataları analiz eder ve düzeltir.</p>
+
+    <input type="text" id="veriGirisi" placeholder="Örn: 10110011">
+    <br>
+    <button onclick="ornekVeriUret()">Rastgele Veri Üret</button>
+    <button onclick="hammingHesapla()">Hamming Kodunu Hesapla</button>
+    <button onclick="bellegeYaz()">Belleğe Kaydet</button>
+    <button onclick="hataliBitUret()">Yapay Hata Ekle</button>
+    <button onclick="hatayiDuzelt()">Hatalı Veriyi Düzelt</button>
+    <button onclick="temizle()">Temizle</button>
+
+    <div class="bit-kutusu" id="bitKutusu"></div>
+
+    <div class="sonuc-alani">
+      <p id="kodSonucu"></p>
+      <p id="sendromSonucu"></p>
+      <p id="duzeltmeSonucu"></p>
+    </div>
+
+    <h3>Bellek (Son 5 Kayıt):</h3>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Kod</th><th>Durum</th></tr>
+      </thead>
+      <tbody id="bellekTablosu"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let sonKod = "";
+    let bellek = [];
+
+    function ornekVeriUret() {
+      const uzunluklar = [4, 8, 16];
+      const sec = uzunluklar[Math.floor(Math.random() * uzunluklar.length)];
+      let veri = "";
+      for (let i = 0; i < sec; i++) {
+        veri += Math.round(Math.random());
+      }
+      document.getElementById("veriGirisi").value = veri;
+    }
+
+    function gecerliMi(veri) {
+      return /^[01]+$/.test(veri) && [4, 8, 16].includes(veri.length);
+    }
+
+    function gucMu(n) {
+      return (n & (n - 1)) === 0;
+    }
+
+    function pariteHesapla(arr, indeks) {
+      let sonuc = 0;
+      for (let i = 0; i < arr.length; i++) {
+        if (((i + 1) & (indeks + 1)) !== 0) {
+          sonuc ^= arr[i];
+        }
+      }
+      return sonuc;
+    }
+
+    function hammingKoduHesapla(veri) {
+      let r = 0;
+      while (Math.pow(2, r) < veri.length + r + 2) r++;
+      let toplam = veri.length + r + 1;
+      let dizi = new Array(toplam).fill(0);
+      let veriIndeks = 0;
+
+      for (let i = 1; i <= toplam - 1; i++) {
+        if (!gucMu(i)) {
+          dizi[i - 1] = parseInt(veri[veriIndeks++]);
+        }
+      }
+
+      for (let i = 0; i < r; i++) {
+        let pIndeks = Math.pow(2, i) - 1;
+        dizi[pIndeks] = pariteHesapla(dizi, pIndeks);
+      }
+
+      dizi[toplam - 1] = dizi.reduce((a, b) => a ^ b, 0);
+      return dizi.join("");
+    }
+
+    function gosterKod(kod) {
+      const kutu = document.getElementById("bitKutusu");
+      kutu.innerHTML = "";
+      for (let i = 0; i < kod.length; i++) {
+        const eleman = document.createElement("div");
+        eleman.className = "bit";
+        eleman.innerText = kod[i];
+        if (gucMu(i + 1) || i === kod.length - 1) {
+          eleman.classList.add("parite");
+        }
+        kutu.appendChild(eleman);
+      }
+    }
+
+    function hammingHesapla() {
+      const veri = document.getElementById("veriGirisi").value;
+      if (!gecerliMi(veri)) {
+        alert("Lütfen sadece 4, 8 veya 16 bitlik 0-1 dizisi giriniz.");
+        return;
+      }
+      sonKod = hammingKoduHesapla(veri);
+      gosterKod(sonKod);
+      document.getElementById("kodSonucu").innerText = "Hamming Kodu: " + sonKod;
+      document.getElementById("sendromSonucu").innerText = "";
+      document.getElementById("duzeltmeSonucu").innerText = "";
+    }
+
+    function bellegeYaz() {
+      if (!sonKod) return;
+      const dizi = sonKod.split("").map(Number);
+      const sendrom = sendromHesapla(sonKod);
+      const genelParite = dizi.reduce((a, b) => a ^ b, 0);
+
+      let durum = "";
+      if (sendrom === 0 && genelParite === 0) {
+        durum = "Hatasız";
+      } else if (sendrom !== 0 && genelParite === 1) {
+        durum = "Hatalı (Tek Bit)";
+      } else if (sendrom === 0 && genelParite === 1) {
+        durum = "Çift Hata (Düzeltilemez)";
+      } else {
+        durum = "Bilinmeyen";
+      }
+
+      bellek.unshift({ kod: sonKod, durum: durum });
+      if (bellek.length > 5) bellek.pop();
+
+      const tablo = document.getElementById("bellekTablosu");
+      tablo.innerHTML = "";
+      bellek.forEach((satir, i) => {
+        tablo.innerHTML += `<tr><td>${i + 1}</td><td>${satir.kod}</td><td>${satir.durum}</td></tr>`;
+      });
+    }
+
+    function hataliBitUret() {
+      if (!sonKod) return;
+      let hata = sonKod.split("");
+      let i = Math.floor(Math.random() * hata.length);
+      hata[i] = hata[i] === "0" ? "1" : "0";
+      sonKod = hata.join("");
+      gosterKod(sonKod);
+      document.getElementById("kodSonucu").innerText = "Hatalı Kod: " + sonKod;
+    }
+
+    function sendromHesapla(kod) {
+      let s = 0;
+      for (let i = 0; i < kod.length - 1; i++) {
+        if (kod[i] === "1") s ^= i + 1;
+      }
+      return s;
+    }
+
+    function hatayiDuzelt() {
+      if (!sonKod) return;
+      const dizi = sonKod.split("").map(Number);
+      const sendrom = sendromHesapla(sonKod);
+      const genelParite = dizi.reduce((a, b) => a ^ b, 0);
+
+      document.getElementById("sendromSonucu").innerText = "Sendrom: " + sendrom;
+
+      if (sendrom === 0 && genelParite === 0) {
+        document.getElementById("duzeltmeSonucu").innerText = "Hata yok.";
+      } else if (sendrom !== 0 && genelParite === 1) {
+        dizi[sendrom - 1] ^= 1;
+        sonKod = dizi.join("");
+        gosterKod(sonKod);
+        document.getElementById("duzeltmeSonucu").innerText = "Hata düzeltildi! Konum: " + sendrom;
+      } else if (sendrom === 0 && genelParite === 1) {
+        document.getElementById("duzeltmeSonucu").innerText = "Çift hata tespit edildi, düzeltilemez!";
+      } else {
+        document.getElementById("duzeltmeSonucu").innerText = "Tanımsız durum!";
+      }
+    }
+
+    function temizle() {
+      document.getElementById("veriGirisi").value = "";
+      document.getElementById("bitKutusu").innerHTML = "";
+      document.getElementById("kodSonucu").innerText = "";
+      document.getElementById("sendromSonucu").innerText = "";
+      document.getElementById("duzeltmeSonucu").innerText = "";
+      sonKod = "";
+    }
+  </script>
+</body>
+</html>
+
+
